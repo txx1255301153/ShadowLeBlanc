@@ -48,7 +48,6 @@ function ShadowLeBlanc:__init()
     self:LoadSpells()
     self:LoadMenu()
     Callback.Add("Tick", function() self:Tick() end)
-    Callback.Add("Draw", function() self:Draw() end)
 end
 
 function ShadowLeBlanc:LoadSpells()
@@ -63,7 +62,7 @@ function ShadowLeBlanc:LoadMenu()
 	LBMenu:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	LBMenu.Combo:MenuElement({id = "useQ", name = "Q", value = true})
     LBMenu.Combo:MenuElement({id = "useW", name = "W", value = true})
-    LBMenu.Combo:MenuElement({id = "useW2", name = "Return to Position", value = true})
+    LBMenu.Combo:MenuElement({id = "useW2", name = "W2", value = true})
     LBMenu.Combo:MenuElement({id = "useE", name = "E", value = true})
     LBMenu.Combo:MenuElement({id = "useR", name = "R", value = true})
     LBMenu.Combo:MenuElement({id = "useSmart", name = "Smart Combo", value = true})
@@ -72,23 +71,14 @@ function ShadowLeBlanc:LoadMenu()
     LBMenu:MenuElement({id = "Harass", name = "Harass", type = MENU})
     LBMenu.Harass:MenuElement({id = "useQ", name = "Q", value = true})
     LBMenu.Harass:MenuElement({id = "useW", name = "W", value = true})
-    LBMenu.Harass:MenuElement({id = "useW2", name = "Return to Position", value = true})
+    LBMenu.Harass:MenuElement({id = "useW2", name = "W2", value = true})
     LBMenu.Harass:MenuElement({id = "useE", name = "E", value = false})
 
     LBMenu:MenuElement({id = "Clear", name = "Clear", type = MENU})
-    LBMenu.Clear:MenuElement({id = "useQ", name = "Q", value = true})
-    LBMenu.Clear:MenuElement({id = "useW", name = "W", value = true})
-    LBMenu.Clear:MenuElement({id = "wCount", name = "Minion Count to W", value = 3, min = 1, max = 6, step = 1})
-
-    LBMenu:MenuElement({id = "Auto", name = "Auto", type = MENU})
-    LBMenu.Auto:MenuElement({id = "autoECC", name = "Auto E CC", value = true})
-    LBMenu.Auto:MenuElement({id = "autoEGapclose", name = "Auto E Gapclose", value = true})
-
-    LBMenu:MenuElement({id = "Dodge", name = "Dodge", type = MENU})
-    LBMenu.Dodge:MenuElement({id = "useW2", name = "Use W2 to Dodge", value = true})
-    LBMenu.Dodge:MenuElement({id = "useR2", name = "Use R2 to Dodge", value = true})
-    LBMenu.Dodge:MenuElement({id = "dodgePriority", name = "Dodge Priority",  drop = {"Dodge to Closest", "Dodge to Furthest", "Dodge to Safest"}, value = 1})
-    LBMenu.Dodge:MenuElement({id = "dodgeType", name = "Danger Level to Dodge",  drop = {"1", "2", "3", "4", "5", "Only Dodge Death"}, value = 1})
+    LBMenu.Clear:MenuElement({id = "useQ", name = "Q (Last Hit)", value = true})
+    LBMenu.Clear:MenuElement({id = "wCount", name = "Minion Count to W", value = 4, min = 0, max = 6, step = 1})
+    LBMenu.Clear:MenuElement({id = "wLastHit", name = "Only W to Last Hit", value = true})
+    LBMenu.Clear:MenuElement({id = "wTower", name = "W Under Turret?", value = false})
 
     LBMenu:MenuElement({type = MENU, id = "Key", name = "Keys Settings"})
 	LBMenu.Key:MenuElement({id = "Combo", name = "Combo Key", key = 32})
@@ -114,10 +104,10 @@ function ShadowLeBlanc:GetSmartCombo()
 
     if(Utils:Ready(_Q)) then
         qDamage = 30 + ((myHero:GetSpellData(_Q).level) * 25) + myHero.ap * 0.40
-        if LocalBuffManager:HasBuff(target, "LeblancQMark", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed)) then
+        if LocalBuffManager:HasBuff(target, "LeblancQMark", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed) + Q.Delay) then
             qDamage = qDamage + 30 + ((myHero:GetSpellData(_Q).level) * 25) + myHero.ap * 0.40
         end
-        if LocalBuffManager:HasBuff(target, "LeblancRQMark", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed)) then
+        if LocalBuffManager:HasBuff(target, "LeblancRQMark", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed) + Q.Delay) then
             qDamage = qDamage + ((myHero:GetSpellData(_R).level) * 70) + myHero.ap * 0.40
         end
         qDamage = LocalDamageManager:CalculateMagicDamage(myHero, target, qDamage)
@@ -134,20 +124,20 @@ function ShadowLeBlanc:GetSmartCombo()
     end
     if(Utils:Ready(_E)) then
         eDamage = 20 + ((myHero:GetSpellData(_E).level) * 20) + myHero.ap * 0.30
-        if LocalBuffManager:HasBuff(target, "LeblancQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed)) then
+        if LocalBuffManager:HasBuff(target, "LeblancQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed) + E.Delay) then
             eDamage = eDamage + 30 + ((myHero:GetSpellData(_Q).level) * 25) + myHero.ap * 0.40
         end
-        if LocalBuffManager:HasBuff(target, "LeblancRQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed)) then
+        if LocalBuffManager:HasBuff(target, "LeblancRQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed) + E.Delay) then
             eDamage = eDamage + ((myHero:GetSpellData(_R).level) * 70) + myHero.ap * 0.40
         end
         eDamage = LocalDamageManager:CalculateMagicDamage(myHero, target, eDamage)
     end
     if(Utils:Ready(_R) and Utils:GetRType() == "Q") then
         rQDamage = ((myHero:GetSpellData(_R).level) * 70) + myHero.ap * 0.40
-        if LocalBuffManager:HasBuff(target, "LeblancQMark", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed)) then
+        if LocalBuffManager:HasBuff(target, "LeblancQMark", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed) + Q.Delay) then
             rQDamage = rQDamage + 30 + ((myHero:GetSpellData(_Q).level) * 25) + myHero.ap * 0.40
         end
-        if LocalBuffManager:HasBuff(target, "LeblancRQMark", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed)) then
+        if LocalBuffManager:HasBuff(target, "LeblancRQMark", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed) + Q.Delay) then
             rQDamage = rQDamage + ((myHero:GetSpellData(_R).level) * 70) + myHero.ap * 0.40
         end
         rQDamage = LocalDamageManager:CalculateMagicDamage(myHero, target, rQDamage)
@@ -164,10 +154,10 @@ function ShadowLeBlanc:GetSmartCombo()
     end
     if(Utils:Ready(_R) and Utils:GetRType() == "E") then
         rEDamage = ((myHero:GetSpellData(_R).level) * 70) + myHero.ap * 0.40
-        if LocalBuffManager:HasBuff(target, "LeblancQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed)) then
+        if LocalBuffManager:HasBuff(target, "LeblancQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed) + E.Delay) then
             rEDamage = rEDamage + 30 + ((myHero:GetSpellData(_Q).level) * 25) + myHero.ap * 0.40
         end
-        if LocalBuffManager:HasBuff(target, "LeblancRQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed)) then
+        if LocalBuffManager:HasBuff(target, "LeblancRQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed) + E.Delay) then
             rEDamage = rEDamage + ((myHero:GetSpellData(_R).level) * 70) + myHero.ap * 0.40
         end
         rEDamage = LocalDamageManager:CalculateMagicDamage(myHero, target, rEDamage)
@@ -196,19 +186,19 @@ function ShadowLeBlanc:GetSmartCombo()
 
     if (predictedHealth > 0) and (rQDamage > predictedHealth) then
         if(LBMenu.Combo.useR:Value()) then
-            self:ComboAnyR()
+            self:ComboAnyR(false)
         end
     end
 
     if (predictedHealth > 0) and (rWDamage > predictedHealth) then
         if(LBMenu.Combo.useR:Value()) then
-            self:ComboAnyR()
+            self:ComboAnyR(false)
         end
     end
 
     if (predictedHealth > 0) and (rEDamage > predictedHealth) then
         if(LBMenu.Combo.useR:Value()) then
-            self:ComboAnyR()
+            self:ComboAnyR(false)
         end
     end
 
@@ -216,6 +206,25 @@ function ShadowLeBlanc:GetSmartCombo()
         if (Utils:Ready(_W)) then
             local combo1Damage = qDamage + qDamage + wDamage +rWDamage + eDamage
             local combo2Damage = qDamage + qDamage + rQDamage + rQDamage + wDamage + eDamage
+
+            if (predictedHealth > 0) and (combo1Damage > predictedHealth) then
+                if(LBMenu.Combo.useQ:Value()) then
+                    self:ComboQ(true)
+                end
+                if(LBMenu.Combo.useW:Value()) then
+                    self:ComboW()
+                end
+                if(LBMenu.Combo.useR:Value()) then
+                    self:ComboAnyR()
+                end
+                if(LBMenu.Combo.useE:Value()) then
+                    self:ComboE()
+                end
+                if(LBMenu.Combo.useW2:Value()) then
+                    self:ComboW2(-1)
+                end
+            end
+
             if(combo1Damage > combo2Damage) then
                 if(LBMenu.Combo.useQ:Value()) then
                     self:ComboQ(true)
@@ -231,7 +240,6 @@ function ShadowLeBlanc:GetSmartCombo()
                 end
                 if(LBMenu.Combo.useW2:Value()) then
                     self:ComboW2(-1)
-                    self:ComboR2(-1)
                 end
             else
                 if(LBMenu.Combo.useQ:Value()) then
@@ -254,7 +262,6 @@ function ShadowLeBlanc:GetSmartCombo()
                 end
                 if(LBMenu.Combo.useW2:Value()) then
                     self:ComboW2(-1)
-                    self:ComboR2(-1)
                 end
             end
         else
@@ -280,7 +287,6 @@ function ShadowLeBlanc:GetSmartCombo()
             end
             if(LBMenu.Combo.useW2:Value()) then
                 self:ComboW2(-1)
-                self:ComboR2(-1)
             end
         end
     else --PRE LVL 6 COMBOS
@@ -296,7 +302,6 @@ function ShadowLeBlanc:GetSmartCombo()
             end
             if(LBMenu.Combo.useW2:Value()) then
                 self:ComboW2(-1)
-                self:ComboR2(-1)
             end
         else
             if(LBMenu.Combo.useE:Value()) then
@@ -307,7 +312,6 @@ function ShadowLeBlanc:GetSmartCombo()
             end
             if(LBMenu.Combo.useW2:Value()) then
                 self:ComboW2(-1)
-                self:ComboR2(-1)
             end
         end
     end
@@ -362,9 +366,77 @@ function ShadowLeBlanc:Tick()
             self:ComboW2(0)
         end
     end
+
+    if LBMenu.Key.Clear:Value() then
+        self:OnClear()
+    end
 end
 
-_G.Alpha.ObjectManager:OnParticleCreate(function(particle) 
+function ShadowLeBlanc:AutoE()
+    
+end
+
+function ShadowLeBlanc:OnClear()
+    self:ComboW2(0)
+    if (myHero.attackData.state == STATE_WINDUP or Utils:IsWindingUp(myHero) == true) then return end
+
+    local wDamage = 0
+    local qDamage = 0
+
+    local EnemyMinions = Utils:GetEnemyMinions(700)
+
+    if(Utils:Ready(_W)) then
+        wDamage = 45 + ((myHero:GetSpellData(_W).level) * 40) + myHero.ap * 0.60
+
+        if #EnemyMinions >= LBMenu.Clear.wCount:Value() then
+            for i = 1, #EnemyMinions do
+                local minion = EnemyMinions[i]
+
+                if not (LBMenu.Clear.wTower:Value()) then
+                    if(Utils:IsUnderTurret(minion.pos)) then return end
+                end
+
+                local EnemyMinionsNear = Utils:GetEnemyMinions(W.Radius, minion)
+                if(#EnemyMinionsNear >= LBMenu.Clear.wCount:Value()) then
+                    if(LBMenu.Clear.wLastHit:Value()) then
+                        for i = 1, #EnemyMinionsNear do
+                            local newMinion = EnemyMinionsNear[i]
+                            qDamage = LocalDamageManager:CalculateMagicDamage(myHero, newMinion, qDamage)
+                            local extraIncoming = LocalDamageManager:RecordedIncomingDamage(newMinion)
+                            local predictedHealth = newMinion.health - extraIncoming
+                            if(predictedHealth > 0 and wDamage > predictedHealth) then
+                                Utils:CastSpell(HK_W, minion.pos)
+                            end
+                        end
+                    else
+                        Utils:CastSpell(HK_W, minion.pos)
+                    end
+                end
+            end
+        end
+    end
+
+    if(LBMenu.Clear.useQ:Value()) then
+        if(Utils:Ready(_Q)) then
+            qDamage = 30 + ((myHero:GetSpellData(_Q).level) * 25) + myHero.ap * 0.40
+
+            for i = 1, #EnemyMinions do
+                local minion = EnemyMinions[i]
+
+                qDamage = LocalDamageManager:CalculateMagicDamage(myHero, minion, qDamage)
+
+                local extraIncoming = LocalDamageManager:RecordedIncomingDamage(minion)
+                local predictedHealth = minion.health - extraIncoming
+
+                if(predictedHealth > 0 and qDamage > predictedHealth) then
+                    Utils:CastSpell(HK_Q, minion.pos)
+                end
+            end
+        end
+    end
+end
+
+LocalObjectManager:OnParticleCreate(function(particle) 
     if(particle.name == "LeBlanc_Base_W_return_indicator") then
         wPadPos = particle.pos
     end
@@ -373,7 +445,7 @@ _G.Alpha.ObjectManager:OnParticleCreate(function(particle)
     end
 end)
 
-_G.Alpha.ObjectManager:OnParticleDestroy(function(particle) 
+LocalObjectManager:OnParticleDestroy(function(particle) 
     if(particle.name == "LeBlanc_Base_W_return_indicator") then
         wPadPos = nil
     end
@@ -388,7 +460,7 @@ function ShadowLeBlanc:ComboQ(combo)
         if target == nil then return end
         if (Utils:CanTarget(target)) then
             if combo then
-                if(Utils:Ready(_W) or (LocalBuffManager:HasBuff(target, "LeblancE", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed)) or LocalBuffManager:HasBuff(target, "LeblancRE", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed))) or Utils:Ready(_E) or Utils:Ready(_R)) then
+                if(Utils:Ready(_W) or (LocalBuffManager:HasBuff(target, "LeblancE", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed) + Q.Delay) or LocalBuffManager:HasBuff(target, "LeblancRE", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed) + Q.Delay)) or Utils:Ready(_E) or Utils:Ready(_R)) then
                     Utils:CastSpell(HK_Q, target.pos)
                 elseif (myHero.levelData.lvl < 3) then
                     Utils:CastSpell(HK_Q, target.pos)
@@ -400,16 +472,27 @@ function ShadowLeBlanc:ComboQ(combo)
     end
 end
 
-function ShadowLeBlanc:ComboAnyR()
+function ShadowLeBlanc:ComboAnyR(combo)
+    local combo = combo or true
     if (Utils:Ready(_R) and Utils:GetRType() ~= "W2") then
         target = Utils:GetTarget(Utils:GetRRange(), false)
         if target == nil then return end
         if (Utils:CanTarget(target)) then
             if(Utils:GetRType() == "E") then
-                local castPosition, accuracy = LocalGeometry:GetCastPosition(myHero, target, W.Range, W.Delay, W.Speed, W.Radius, W.Collision, W.IsLine)
-                if(accuracy >= 3) then
-                    Utils:CastSpell(HK_R, castPosition)
+                if (combo == true) then
+                    if((LocalBuffManager:HasBuff(target, "LeblancE", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed) + E.Delay)) or (LocalBuffManager:HasBuff(target, "LeblancQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed) + E.Delay)) or (LocalBuffManager:HasBuff(target, "LeblancRQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed) + E.Delay))) then
+                        local castPosition, accuracy = LocalGeometry:GetCastPosition(myHero, target, E.Range, E.Delay, E.Speed, E.Radius, E.Collision)
+                        if(accuracy >= 2) then
+                            Utils:CastSpell(HK_R, castPosition)
+                        end
+                    end
+                else
+                    local castPosition, accuracy = LocalGeometry:GetCastPosition(myHero, target, E.Range, E.Delay, E.Speed, E.Radius, E.Collision)
+                    if(accuracy >= 2) then
+                        Utils:CastSpell(HK_R, castPosition)
+                    end
                 end
+                
             else
                 Utils:CastSpell(HK_R, target.pos)
             end
@@ -468,8 +551,8 @@ function ShadowLeBlanc:ComboE()
         target = Utils:GetTarget(E.Range, false)
         if target == nil then return end
         if (Utils:CanTarget(target)) then
-            local castPosition, accuracy = LocalGeometry:GetCastPosition(myHero, target, W.Range, W.Delay, W.Speed, W.Radius, W.Collision, W.IsLine)
-            if(accuracy >= 3) then
+            local castPosition, accuracy = LocalGeometry:GetCastPosition(myHero, target, E.Range, E.Delay, E.Speed, E.Radius, E.Collision)
+            if(accuracy >= 2) then
                 Utils:CastSpell(HK_E, castPosition)
             end
         end
@@ -523,15 +606,6 @@ function ShadowLeBlanc:checkSafeArea(radius, areaPos, target, bias)
 
     return (safelvl + bias >= safelvlhere)
 end
-
-function ShadowLeBlanc:Draw()
-    --[[if(wPadPos ~= nil) then
-        Draw.Circle(wPadPos, 150, 10, Draw.Color(200, 255, 87, 51))
-    end
-    if(rPadPos ~= nil) then
-        Draw.Circle(rPadPos, 150, 10, Draw.Color(200, 255, 87, 51))
-    end]]--
- end
 
 class "Utils"
 
@@ -592,6 +666,26 @@ function Utils:IsRecalling()
 	return false
 end
 
+function Utils:IsWindingUp(unit)
+	return unit.activeSpell.valid
+end
+
+function Utils:GetEnemyMinions(range, pos)
+    local pos = pos or myHero
+	local result = {}
+	local counter = 1
+	for i = 1, LocalGameMinionCount() do
+		local minion = LocalGameMinion(i);
+		if minion.isEnemy and minion.team ~= 300 and minion.valid and minion.alive and minion.visible and minion.isTargetable then
+			if self:GetDistanceSqr(pos, minion) <= range * range then
+				result[counter] = minion
+				counter = counter + 1
+			end
+		end
+	end
+	return result
+end
+
 function Utils:CanTarget(target)
 	return target and target.pos and target.isEnemy and target.alive and target.health > 0 and target.visible and target.isTargetable
 end
@@ -643,6 +737,32 @@ function Utils:GetRRange()
         rRange = E.Range
     end
     return rRange
+end
+
+function Utils:IsUnderTurret(pos)
+	local EnemyTurrets = self:GetEnemyTurrets(2000)
+	for i = 1, #EnemyTurrets do
+		local turret = EnemyTurrets[i]
+		if self:GetDistanceSqr(pos, turret.pos) <= (760 + turret.boundingRadius + myHero.boundingRadius) ^ 2 then
+			return true
+		end
+	end
+	return false
+end
+
+function Utils:GetEnemyTurrets(range)
+	local result = {}
+	local counter = 1
+	for i = 1, LocalGameTurretCount() do
+		local turret = LocalGameTurret(i);
+		if turret.isEnemy and turret.alive and turret.visible and turret.isTargetable then
+			if self:GetDistanceSqr(myHero, turret) <= range * range then
+				result[counter] = turret
+				counter = counter + 1
+			end
+		end
+	end
+	return result
 end
 
 function Utils:CurrentPctLife(entity)
