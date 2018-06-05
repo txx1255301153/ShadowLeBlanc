@@ -76,6 +76,7 @@ function ShadowLeBlanc:LoadMenu()
 
     LBMenu:MenuElement({id = "Clear", name = "Clear", type = MENU})
     LBMenu.Clear:MenuElement({id = "useQ", name = "Q (Last Hit)", value = true})
+    LBMenu.Clear:MenuElement({id = "useW2", name = "W2", value = true})
     LBMenu.Clear:MenuElement({id = "wCount", name = "Minion Count to W", value = 4, min = 0, max = 6, step = 1})
     LBMenu.Clear:MenuElement({id = "wLastHit", name = "Only W to Last Hit", value = true})
     LBMenu.Clear:MenuElement({id = "wTower", name = "W Under Turret?", value = false})
@@ -206,9 +207,9 @@ function ShadowLeBlanc:GetSmartCombo()
     end
 
     if(myHero.levelData.lvl >= 6) then --AFTER LVL 6 COMBOS
-        if (Utils:Ready(_W)) then
-            local combo1Damage = qDamage + qDamage + wDamage +rWDamage + eDamage
-            local combo2Damage = qDamage + qDamage + rQDamage + rQDamage + wDamage + eDamage
+        if ((Utils:Ready(_W) and Utils:GetWType() ~= "W2")) then
+            local combo1Damage = qDamage + wDamage +rWDamage + eDamage
+            local combo2Damage = qDamage + rQDamage + wDamage + eDamage
 
             if (predictedHealth > 0) and (combo1Damage > predictedHealth) then
                 if(LBMenu.Combo.useQ:Value()) then
@@ -268,19 +269,19 @@ function ShadowLeBlanc:GetSmartCombo()
                 end
             end
         else
-            if(Utils:GetRType() == "W") then
+            if(Utils:GetRType() == "W" and Utils:GetDistance(myHero.pos, target.pos) > 500) then
                 if(LBMenu.Combo.useR:Value()) then
                     self:ComboAnyR()
                 end
-            end
-            if(LBMenu.Combo.useE:Value()) then
-                self:ComboE()
             end
             if(LBMenu.Combo.useQ:Value()) then
                 self:ComboQ(true)
             end
             if(LBMenu.Combo.useR:Value()) then
                 self:ComboAnyR()
+            end
+            if(LBMenu.Combo.useE:Value()) then
+                self:ComboE()
             end
             if(LBMenu.Combo.useW:Value()) then
                 self:ComboW()
@@ -320,10 +321,38 @@ function ShadowLeBlanc:GetSmartCombo()
     end
 end
 
+function ShadowLeBlanc:AutoIgnite()
+    if not myHero or not myHero.levelData then return end
+	for i = 1, LocalGameHeroCount() do
+		local hero = LocalGameHero(i)
+		if Utils:CanTarget(hero) and Utils:IsInRange(myHero.pos, hero.pos, 600) then	
+			local remainingHealth = hero.health - LocalDamageManager:RecordedIncomingDamage(hero)
+			if not remainingHealth then
+				remainingHealth = hero.health
+			end
+			if remainingHealth > 0 then
+				if remainingHealth < ({80,105,130,155,180,205,230,255,280,305,330,355,380,405,430,455,480,505})[myHero.levelData.lvl] and LBMenu.Combo.Ignite:Value() then	
+                    closeAllies = Utils:GetAllyHeroes(300, hero.pos)
+                    if (closeAllies[1] == nil) then 
+                        if myHero:GetSpellData(SUMMONER_1).name == "SummonerDot" and (Game.CanUseSpell(SUMMONER_1) == 0) then
+                            Control.CastSpell(HK_SUMMONER_1, hero)
+                            break
+                        elseif myHero:GetSpellData(SUMMONER_2).name == "SummonerDot" and (Game.CanUseSpell(SUMMONER_2) == 0) then
+                            Control.CastSpell(HK_SUMMONER_2, hero)
+                            break
+                        end
+                    end
+				end
+			end
+		end
+	end
+end
+
 function ShadowLeBlanc:Tick()
     if myHero.dead or LocalGameIsChatOpen == true or Utils:IsRecalling() == true then return end
 
     if LBMenu.Key.Combo:Value() then
+        self:AutoIgnite()
         if(LBMenu.Combo.useSmart:Value()) then
             self:GetSmartCombo()
         else
@@ -376,7 +405,10 @@ function ShadowLeBlanc:Tick()
 end
 
 function ShadowLeBlanc:OnClear()
-    self:ComboW2(0)
+    if(LBMenu.Clear.useW2:Value()) then
+        self:ComboW2(0)
+    end
+
     if (myHero.attackData.state == STATE_WINDUP or Utils:IsWindingUp(myHero) == true) then return end
 
     local wDamage = 0
@@ -384,7 +416,7 @@ function ShadowLeBlanc:OnClear()
 
     local EnemyMinions = Utils:GetEnemyMinions(700)
 
-    if(Utils:Ready(_W)) then
+    if((Utils:Ready(_W) and Utils:GetWType() ~= "W2")) then
         wDamage = 45 + ((myHero:GetSpellData(_W).level) * 40) + myHero.ap * 0.60
 
         if #EnemyMinions >= LBMenu.Clear.wCount:Value() then
