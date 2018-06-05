@@ -52,7 +52,7 @@ end
 
 function ShadowLeBlanc:LoadSpells()
 	Q = {Range = 700, Delay = 0.25, Speed = 2000, Collision = false}
-	W = {Range = 700, Delay = 0.25, Speed = 1450, Radius = 260, Collision = false}
+	W = {Range = 800, Delay = 0.25, Speed = 1450, Radius = 260, Collision = false}
 	E = {Range = 700, Delay = 0.25, Speed = 1750, Radius = 27.5, Collision = true, IsLine = true}
 end
 
@@ -79,6 +79,9 @@ function ShadowLeBlanc:LoadMenu()
     LBMenu.Clear:MenuElement({id = "wCount", name = "Minion Count to W", value = 4, min = 0, max = 6, step = 1})
     LBMenu.Clear:MenuElement({id = "wLastHit", name = "Only W to Last Hit", value = true})
     LBMenu.Clear:MenuElement({id = "wTower", name = "W Under Turret?", value = false})
+
+    LBMenu:MenuElement({id = "Pred", name = "Pred Settings", type = MENU})
+    LBMenu.Pred:MenuElement({id = "E", name = "E AlphaLib Hitchance", value = 2, min = 0, max = 5, step = 1})
 
     LBMenu:MenuElement({type = MENU, id = "Key", name = "Keys Settings"})
 	LBMenu.Key:MenuElement({id = "Combo", name = "Combo Key", key = 32})
@@ -372,10 +375,6 @@ function ShadowLeBlanc:Tick()
     end
 end
 
-function ShadowLeBlanc:AutoE()
-    
-end
-
 function ShadowLeBlanc:OnClear()
     self:ComboW2(0)
     if (myHero.attackData.state == STATE_WINDUP or Utils:IsWindingUp(myHero) == true) then return end
@@ -460,13 +459,13 @@ function ShadowLeBlanc:ComboQ(combo)
         if target == nil then return end
         if (Utils:CanTarget(target)) then
             if combo then
-                if(Utils:Ready(_W) or (LocalBuffManager:HasBuff(target, "LeblancE", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed) + Q.Delay) or LocalBuffManager:HasBuff(target, "LeblancRE", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed) + Q.Delay)) or Utils:Ready(_E) or Utils:Ready(_R)) then
-                    Utils:CastSpell(HK_Q, target.pos)
+                if((Utils:Ready(_W) and Utils:GetWType() ~= "W2") or (LocalBuffManager:HasBuff(target, "LeblancE", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed) + Q.Delay) or LocalBuffManager:HasBuff(target, "LeblancRE", (Utils:GetDistance(myHero.pos, target.pos)/Q.Speed) + Q.Delay)) or Utils:Ready(_E) or (Utils:Ready(_R) and Utils:GetRType() ~= "W2")) then
+                    Utils:CastSpell(HK_Q, target)
                 elseif (myHero.levelData.lvl < 3) then
-                    Utils:CastSpell(HK_Q, target.pos)
+                    Utils:CastSpell(HK_Q, target)
                 end
             else
-                Utils:CastSpell(HK_Q, target.pos)
+                Utils:CastSpell(HK_Q, target)
             end
         end
     end
@@ -482,19 +481,19 @@ function ShadowLeBlanc:ComboAnyR(combo)
                 if (combo == true) then
                     if((LocalBuffManager:HasBuff(target, "LeblancE", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed) + E.Delay)) or (LocalBuffManager:HasBuff(target, "LeblancQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed) + E.Delay)) or (LocalBuffManager:HasBuff(target, "LeblancRQMark", (Utils:GetDistance(myHero.pos, target.pos)/E.Speed) + E.Delay))) then
                         local castPosition, accuracy = LocalGeometry:GetCastPosition(myHero, target, E.Range, E.Delay, E.Speed, E.Radius, E.Collision)
-                        if(accuracy >= 2) then
+                        if(accuracy >= LBMenu.Pred.E:Value()) then
                             Utils:CastSpell(HK_R, castPosition)
                         end
                     end
                 else
                     local castPosition, accuracy = LocalGeometry:GetCastPosition(myHero, target, E.Range, E.Delay, E.Speed, E.Radius, E.Collision)
-                    if(accuracy >= 2) then
+                    if(accuracy >= LBMenu.Pred.E:Value()) then
                         Utils:CastSpell(HK_R, castPosition)
                     end
                 end
                 
             else
-                Utils:CastSpell(HK_R, target.pos)
+                Utils:CastSpell(HK_R, target)
             end
         end
     end
@@ -505,7 +504,7 @@ function ShadowLeBlanc:ComboW()
         target = Utils:GetTarget(W.Range, false)
         if target == nil then return end
         if (Utils:CanTarget(target)) then
-            Utils:CastSpell(HK_W, target.pos)
+            Utils:CastSpell(HK_W, target)
         end
     end
 end
@@ -552,7 +551,22 @@ function ShadowLeBlanc:ComboE()
         if target == nil then return end
         if (Utils:CanTarget(target)) then
             local castPosition, accuracy = LocalGeometry:GetCastPosition(myHero, target, E.Range, E.Delay, E.Speed, E.Radius, E.Collision)
-            if(accuracy >= 2) then
+            if(accuracy >= LBMenu.Pred.E:Value()) then
+                Utils:CastSpell(HK_E, castPosition)
+            else
+                self:ComboCloseE()
+            end
+        end
+    end
+end
+
+function ShadowLeBlanc:ComboCloseE()
+    if (Utils:Ready(_E)) then
+        target = Utils:GetTarget(E.Range, false)
+        if target == nil then return end
+        if (Utils:CanTarget(target) and Utils:GetDistance(myHero.pos, target.pos) < 300) then
+            local castPosition, accuracy = LocalGeometry:GetCastPosition(myHero, target, E.Range, E.Delay, E.Speed, E.Radius, E.Collision)
+            if(accuracy >= 1) then
                 Utils:CastSpell(HK_E, castPosition)
             end
         end
@@ -636,7 +650,7 @@ function Utils:GetEnemyHeroes(range, fromPos, target)
     for i = 1, LocalGameHeroCount() do
         local hero = LocalGameHero(i);
         if _G.SDK.Utilities:IsValidTarget(hero) and hero.isEnemy and (hero ~= target) then
-            if _G.SDK.Utilities:IsInRange(fromPos, hero, range) then
+            if self:IsInRange(fromPos, hero, range) then
                 _G.SDK.Linq:Add(result, hero);
             end
         end
@@ -649,12 +663,24 @@ function Utils:GetAllyHeroes(range, fromPos, target)
     for i = 1, LocalGameHeroCount() do
         local hero = LocalGameHero(i);
         if _G.SDK.Utilities:IsValidTarget(hero) and not hero.isEnemy and (hero ~= myHero) then
-            if _G.SDK.Utilities:IsInRange(fromPos, hero, range) then
+            if self:IsInRange(fromPos, hero, range) then
                 _G.SDK.Linq:Add(result, hero);
             end
         end
     end
     return result;
+end
+
+function Utils:IsInRange(fromPos, dest, range)
+    if(fromPos == nil) then return false end
+    if(dest == nil) then return false end
+    if(range == nil) then return false end
+
+    if(self:GetDistance(fromPos, dest) < range) then
+        return true
+    end
+
+    return false
 end
 
 function Utils:IsRecalling()
