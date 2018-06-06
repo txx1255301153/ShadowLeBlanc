@@ -2,7 +2,7 @@
 
 if myHero.charName ~= "Leblanc" then return end
 
-local version,author,lVersion = "v1.0","TheCallunxz","8.11"
+local version,author,lVersion = "v1.1","TheCallunxz","8.11"
 
 if FileExist(COMMON_PATH .. "Alpha.lua") then
 	require 'Alpha'
