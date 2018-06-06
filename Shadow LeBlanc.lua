@@ -52,7 +52,7 @@ end
 
 function ShadowLeBlanc:LoadSpells()
 	Q = {Range = 700, Delay = 0.25, Speed = 2000, Collision = false}
-	W = {Range = 800, Delay = 0.25, Speed = 1450, Radius = 260, Collision = false}
+	W = {Range = 700, Delay = 0.25, Speed = 1450, Radius = 260, Collision = false}
 	E = {Range = 700, Delay = 0.25, Speed = 1750, Radius = 27.5, Collision = true, IsLine = true}
 end
 
@@ -64,8 +64,10 @@ function ShadowLeBlanc:LoadMenu()
     LBMenu.Combo:MenuElement({id = "useW", name = "W", value = true})
     LBMenu.Combo:MenuElement({id = "useW2", name = "W2", value = true})
     LBMenu.Combo:MenuElement({id = "useE", name = "E", value = true})
-    LBMenu.Combo:MenuElement({id = "useR", name = "R", value = true})
-    LBMenu.Combo:MenuElement({id = "useSmart", name = "Smart Combo", value = true})
+    LBMenu.Combo:MenuElement({id = "useRQ", name = "RQ", value = true})
+    LBMenu.Combo:MenuElement({id = "useRW", name = "RW", value = true})
+    LBMenu.Combo:MenuElement({id = "useRE", name = "RE", value = true})
+    LBMenu.Combo:MenuElement({id = "useSmart", name = "Slow Combo", value = false})
     LBMenu.Combo:MenuElement({id = "Ignite", name = "Ignite", value = true})
 
     LBMenu:MenuElement({id = "Harass", name = "Harass", type = MENU})
@@ -92,6 +94,13 @@ function ShadowLeBlanc:LoadMenu()
     LBMenu:MenuElement({id = "blank", type = SPACE , name = ""})
 	LBMenu:MenuElement({id = "blank", type = SPACE , name = "Script Ver: "..version.. " - LoL Ver: "..lVersion.. ""})
 	LBMenu:MenuElement({id = "blank", type = SPACE , name = "by "..author.. ""})
+end
+
+function ShadowLeBlanc:ShouldUseR()
+    if(LBMenu.Combo.useRQ:Value() or LBMenu.Combo.useRW:Value() or LBMenu.Combo.useRE:Value()) then
+        return true
+    end
+    return false
 end
 
 function ShadowLeBlanc:GetSmartCombo()
@@ -189,19 +198,19 @@ function ShadowLeBlanc:GetSmartCombo()
     end
 
     if (predictedHealth > 0) and (rQDamage > predictedHealth) then
-        if(LBMenu.Combo.useR:Value()) then
+        if(self:ShouldUseR()) then
             self:ComboAnyR(false)
         end
     end
 
     if (predictedHealth > 0) and (rWDamage > predictedHealth) then
-        if(LBMenu.Combo.useR:Value()) then
+        if(self:ShouldUseR()) then
             self:ComboAnyR(false)
         end
     end
 
     if (predictedHealth > 0) and (rEDamage > predictedHealth) then
-        if(LBMenu.Combo.useR:Value()) then
+        if(self:ShouldUseR()) then
             self:ComboAnyR(false)
         end
     end
@@ -218,7 +227,7 @@ function ShadowLeBlanc:GetSmartCombo()
                 if(LBMenu.Combo.useW:Value()) then
                     self:ComboW()
                 end
-                if(LBMenu.Combo.useR:Value()) then
+                if(self:ShouldUseR()) then
                     self:ComboAnyR()
                 end
                 if(LBMenu.Combo.useE:Value()) then
@@ -236,7 +245,7 @@ function ShadowLeBlanc:GetSmartCombo()
                 if(LBMenu.Combo.useW:Value()) then
                     self:ComboW()
                 end
-                if(LBMenu.Combo.useR:Value()) then
+                if(self:ShouldUseR()) then
                     self:ComboAnyR()
                 end
                 if(LBMenu.Combo.useE:Value()) then
@@ -249,19 +258,19 @@ function ShadowLeBlanc:GetSmartCombo()
                 if(LBMenu.Combo.useQ:Value()) then
                     self:ComboQ(true)
                 end
-                if(LBMenu.Combo.useR:Value()) then
+                if(self:ShouldUseR()) then
                     self:ComboAnyR()
                 end
                 if(LBMenu.Combo.useW:Value()) then
                     self:ComboW()
                 end
-                if(LBMenu.Combo.useR:Value()) then
+                if(self:ShouldUseR()) then
                     self:ComboAnyR()
                 end
                 if(LBMenu.Combo.useE:Value()) then
                     self:ComboE()
                 end
-                if(LBMenu.Combo.useR:Value()) then
+                if(self:ShouldUseR()) then
                     self:ComboAnyR()
                 end
                 if(LBMenu.Combo.useW2:Value()) then
@@ -270,14 +279,14 @@ function ShadowLeBlanc:GetSmartCombo()
             end
         else
             if(Utils:GetRType() == "W" and Utils:GetDistance(myHero.pos, target.pos) > 500) then
-                if(LBMenu.Combo.useR:Value()) then
+                if(self:ShouldUseR()) then
                     self:ComboAnyR()
                 end
             end
             if(LBMenu.Combo.useQ:Value()) then
                 self:ComboQ(true)
             end
-            if(LBMenu.Combo.useR:Value()) then
+            if(self:ShouldUseR()) then
                 self:ComboAnyR()
             end
             if(LBMenu.Combo.useE:Value()) then
@@ -286,7 +295,7 @@ function ShadowLeBlanc:GetSmartCombo()
             if(LBMenu.Combo.useW:Value()) then
                 self:ComboW()
             end
-            if(LBMenu.Combo.useR:Value()) then
+            if(self:ShouldUseR()) then
                 self:ComboAnyR()
             end
             if(LBMenu.Combo.useW2:Value()) then
@@ -359,19 +368,19 @@ function ShadowLeBlanc:Tick()
             if(LBMenu.Combo.useQ:Value()) then
                 self:ComboQ(true)
             end
-            if(LBMenu.Combo.useR:Value()) then
+            if(self:ShouldUseR()) then
                 self:ComboAnyR()
             end
             if(LBMenu.Combo.useW:Value()) then
                 self:ComboW()
             end
-            if(LBMenu.Combo.useR:Value()) then
+            if(self:ShouldUseR()) then
                 self:ComboAnyR()
             end
             if(LBMenu.Combo.useE:Value()) then
                 self:ComboE()
             end
-            if(LBMenu.Combo.useR:Value()) then
+            if(self:ShouldUseR()) then
                 self:ComboAnyR()
             end
             if(LBMenu.Combo.useW2:Value()) then
@@ -507,6 +516,9 @@ function ShadowLeBlanc:ComboAnyR(combo)
     local combo = combo or true
     if (Utils:Ready(_R) and Utils:GetRType() ~= "W2") then
         target = Utils:GetTarget(Utils:GetRRange(), false)
+        if Utils:GetRType() == "Q" and not LBMenu.Combo.useRQ:Value() then return end
+        if Utils:GetRType() == "W" and not LBMenu.Combo.useRW:Value() then return end
+        if Utils:GetRType() == "E" and not LBMenu.Combo.useRE:Value() then return end
         if target == nil then return end
         if (Utils:CanTarget(target)) then
             if(Utils:GetRType() == "E") then
