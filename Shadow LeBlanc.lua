@@ -2,7 +2,7 @@
 
 if myHero.charName ~= "Leblanc" then return end
 
-local version,author,lVersion = "v1.1","TheCallunxz","8.11"
+local version,author,lVersion = "v1.2","TheCallunxz","8.11"
 
 if FileExist(COMMON_PATH .. "Alpha.lua") then
 	require 'Alpha'
@@ -67,14 +67,18 @@ function ShadowLeBlanc:LoadMenu()
     LBMenu.Combo:MenuElement({id = "useRQ", name = "RQ", value = true})
     LBMenu.Combo:MenuElement({id = "useRW", name = "RW", value = true})
     LBMenu.Combo:MenuElement({id = "useRE", name = "RE", value = true})
-    LBMenu.Combo:MenuElement({id = "useSmart", name = "Slow Combo", value = false})
     LBMenu.Combo:MenuElement({id = "Ignite", name = "Ignite", value = true})
+    LBMenu.Combo:MenuElement({id = "Speed", name = "Combo Speed", value = 2, min = 1, max = 3, step = 1})
+    LBMenu.Combo:MenuElement({type = SPACE, id = "ComboExplain", name = "High Speed Value = Faster Burst (Less Calculations)"})
+    LBMenu.Combo:MenuElement({type = SPACE, id = "ComboExplain2", name = "Low Speed Value = Slower Burst (More Calculations)"})
 
     LBMenu:MenuElement({id = "Harass", name = "Harass", type = MENU})
     LBMenu.Harass:MenuElement({id = "useQ", name = "Q", value = true})
     LBMenu.Harass:MenuElement({id = "useW", name = "W", value = true})
     LBMenu.Harass:MenuElement({id = "useW2", name = "W2", value = true})
     LBMenu.Harass:MenuElement({id = "useE", name = "E", value = false})
+
+    LBMenu:MenuElement({id = "Targetting", name = "Targetting", type = MENU})
 
     LBMenu:MenuElement({id = "Clear", name = "Clear", type = MENU})
     LBMenu.Clear:MenuElement({id = "useQ", name = "Q (Last Hit)", value = true})
@@ -357,14 +361,51 @@ function ShadowLeBlanc:AutoIgnite()
 	end
 end
 
+function ShadowLeBlanc:GetFastCombo()
+    target = Utils:GetTarget(700, false)
+    if target == nil then return end
+
+    if(Utils:Ready(_Q) and LBMenu.Combo.useQ:Value()) then
+        Utils:CastSpell(HK_Q, target)
+    end
+
+    if(Utils:Ready(_R) and Utils:GetRType() == "Q" and LBMenu.Combo.useRQ:Value()) then
+        Utils:CastSpell(HK_R, target)
+    end
+
+    if(Utils:Ready(_W) and Utils:GetWType() == "W" and LBMenu.Combo.useW:Value()) then
+        Utils:CastSpell(HK_W, target)
+    end
+
+    if(Utils:Ready(_R) and Utils:GetRType() == "W" and LBMenu.Combo.useRW:Value()) then
+        Utils:CastSpell(HK_R, target)
+    end
+
+    if(Utils:Ready(_E) and LBMenu.Combo.useE:Value()) then
+        if(Utils:GetDistance(target.pos, myHero.pos) < 250) then
+            Utils:CastSpell(HK_E, target)
+        end
+    end
+
+    if(Utils:Ready(_R) and Utils:GetRType() == "E" and LBMenu.Combo.useRE:Value()) then
+        if(Utils:GetDistance(target.pos, myHero.pos) < 250) then
+            Utils:CastSpell(HK_R, target)
+        end
+    end
+
+    if(LBMenu.Combo.useW2:Value()) then
+        self:ComboW2(-1)
+    end
+end
+
 function ShadowLeBlanc:Tick()
     if myHero.dead or LocalGameIsChatOpen == true or Utils:IsRecalling() == true then return end
 
     if LBMenu.Key.Combo:Value() then
         self:AutoIgnite()
-        if(LBMenu.Combo.useSmart:Value()) then
+        if(LBMenu.Combo.Speed:Value() == 1) then
             self:GetSmartCombo()
-        else
+        elseif (LBMenu.Combo.Speed:Value() == 2) then
             if(LBMenu.Combo.useQ:Value()) then
                 self:ComboQ(true)
             end
@@ -385,8 +426,9 @@ function ShadowLeBlanc:Tick()
             end
             if(LBMenu.Combo.useW2:Value()) then
                 self:ComboW2(-1)
-                self:ComboR2(-1)
             end
+        elseif (LBMenu.Combo.Speed:Value() == 3) then
+            self:GetFastCombo()
         end
     end
 
