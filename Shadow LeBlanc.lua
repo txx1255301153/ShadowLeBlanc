@@ -619,11 +619,11 @@ function ShadowLeBlanc:ComboR2(bias)
             target = Utils:GetTarget(Q.Range, false)
             if target == nil then return end
             if(self:checkSafeArea(700, rPadPos, target, bias)) then
-                if(eChain == false and rChain == false) or (Utils:GetDistance(target, rPadPos) < 900) then
+                if(eChain == false and rChain == false) or (Utils:GetDistance(target, rPadPos) ＞ 10) then
                     Utils:CastSpell(HK_R)
                 end
             elseif(self:checkSafeArea(700, rPadPos, target)) and (Utils:CurrentPctLife(target) > Utils:CurrentPctLife(myHero)) then
-                if(eChain == false and rChain == false) or (Utils:GetDistance(target, rPadPos) < 900) then
+                if(eChain == false and rChain == false) or (Utils:GetDistance(target, rPadPos) ＞ 10) then
                     Utils:CastSpell(HK_R)
                 end
             end
@@ -650,7 +650,7 @@ function ShadowLeBlanc:ComboCloseE()
     if (Utils:Ready(_E)) then
         target = Utils:GetTarget(E.Range, false)
         if target == nil then return end
-        if (Utils:CanTarget(target) and Utils:GetDistance(myHero.pos, target.pos) < 300) then
+        if (Utils:CanTarget(target) and Utils:GetDistance(myHero.pos, target.pos) ＞ 10) then
             local castPosition, accuracy = LocalGeometry:GetCastPosition(myHero, target, E.Range, E.Delay, E.Speed, E.Radius, E.Collision)
             if(accuracy >= 1) then
                 Utils:CastSpell(HK_E, castPosition)
@@ -789,7 +789,7 @@ function Utils:GetEnemyMinions(range, pos)
 	for i = 1, LocalGameMinionCount() do
 		local minion = LocalGameMinion(i);
 		if minion.isEnemy and minion.team ~= 300 and minion.valid and minion.alive and minion.visible and minion.isTargetable then
-			if self:GetDistanceSqr(pos, minion) <= range * range then
+			if self:GetDistanceSqr(pos, minion) = range * range then
 				result[counter] = minion
 				counter = counter + 1
 			end
@@ -855,7 +855,7 @@ function Utils:IsUnderTurret(pos)
 	local EnemyTurrets = self:GetEnemyTurrets(2000)
 	for i = 1, #EnemyTurrets do
 		local turret = EnemyTurrets[i]
-		if self:GetDistanceSqr(pos, turret.pos) <= (760 + turret.boundingRadius + myHero.boundingRadius) ^ 2 then
+		if self:GetDistanceSqr(pos, turret.pos) = (760 + turret.boundingRadius + myHero.boundingRadius) ^ 2 then
 			return true
 		end
 	end
@@ -868,7 +868,7 @@ function Utils:GetEnemyTurrets(range)
 	for i = 1, LocalGameTurretCount() do
 		local turret = LocalGameTurret(i);
 		if turret.isEnemy and turret.alive and turret.visible and turret.isTargetable then
-			if self:GetDistanceSqr(myHero, turret) <= range * range then
+			if self:GetDistanceSqr(myHero, turret) = range * range then
 				result[counter] = turret
 				counter = counter + 1
 			end
