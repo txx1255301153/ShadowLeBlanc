@@ -344,7 +344,7 @@ function ShadowLeBlanc:AutoIgnite()
 				remainingHealth = hero.health
 			end
 			if remainingHealth > 0 then
-				if remainingHealth < ({80,105,130,155,180,205,230,255,280,305,330,355,380,405,430,455,480,505})[myHero.levelData.lvl] and LBMenu.Combo.Ignite:Value() then	
+					
                     closeAllies = Utils:GetAllyHeroes(300, hero.pos)
                     if (closeAllies[1] == nil) then 
                         if myHero:GetSpellData(SUMMONER_1).name == "SummonerDot" and (Game.CanUseSpell(SUMMONER_1) == 0) then
